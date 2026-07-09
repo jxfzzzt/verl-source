@@ -179,6 +179,8 @@ def compute_gae_advantage_return(
             shape: (bs, response_length)
 
     """
+
+    # 这里是具体使用 GAE算法去计算优势估计的过程
     with torch.no_grad():
         lastgaelam = 0
         advantages_reversed = []
