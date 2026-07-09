@@ -15,3 +15,4 @@ python -m pip install -U pip
 python -m pip install --force-reinstall "setuptools<70"
 python -m pip install --no-deps -e .
 USE_MEGATRON=0 bash scripts/install_vllm_sglang_mcore.sh
+pip install "ray[default]" debugpy
