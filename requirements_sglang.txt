@@ -1,21 +1,24 @@
-# requirements.txt records the full set of dependencies for development
+# requirements.txt records the full set of dependencies for development.
+# Runtime stack aligned with verl v0.4.1 recommended CUDA 12.4 / PyTorch 2.6 setup.
 accelerate
 codetiming
 datasets
 dill
-flash-attn
+flash-attn==2.7.4.post1
 hydra-core
-numpy
+numpy<2.0.0
 pandas
 peft
 pyarrow>=19.0.0
 pybind11
 pylatexenc
-ray[default]>=2.10
-tensordict<=0.6.2
+ray[default]==2.44.1
+tensordict==0.6.2
+torch==2.6.0
 torchdata
-torchvision
-transformers
+torchaudio==2.6.0
+torchvision==0.21.0
+transformers[hf_xet]==4.51.3
 wandb
 sglang[all]==0.4.6.post5
 torch-memory-saver>=0.0.5
