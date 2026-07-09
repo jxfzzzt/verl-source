@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # Python 3.10. verl v0.4.1 recommended runtime stack:
-# PyTorch 2.6.0 + CUDA 12.4 wheels, vLLM 0.8.5, SGLang 0.4.6.post5.
+# PyTorch 2.6.0 + CUDA 12.4/12.8 wheels, vLLM 0.8.5, SGLang 0.4.6.post5.
 # clone verl source code
 git clone git@github.com:jxfzzzt/verl-source.git
 cd verl-source
