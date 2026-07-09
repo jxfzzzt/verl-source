@@ -8,7 +8,6 @@
       "module": "verl.trainer.main_ppo",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "preLaunchTask": "prepare GSM8K debug data",
       "justMyCode": false,
       "subProcess": true,
       "env": {
@@ -25,8 +24,8 @@
       "args": [
         "algorithm.adv_estimator=gae",
         "algorithm.use_kl_in_reward=False",
-        "data.train_files=${env:HOME}/data/gsm8k_debug/train.parquet",
-        "data.val_files=${env:HOME}/data/gsm8k_debug/test.parquet",
+        "data.train_files=${env:HOME}/data/gsm8k/train.parquet",
+        "data.val_files=${env:HOME}/data/gsm8k/test.parquet",
         "data.train_batch_size=8",
         "data.val_batch_size=16",
         "data.max_prompt_length=512",
