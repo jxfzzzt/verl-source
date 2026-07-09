@@ -596,27 +596,44 @@ def compute_policy_loss(
         loss_agg_mode (str, optional):
             Aggregation mode for `agg_loss`. Defaults to "token-mean".
     """
+    # 这里开始计算PPO Policy的loss
+
     assert clip_ratio_c > 1.0, "The lower bound of the clip_ratio_c for dual-clip PPO should be greater than 1.0," + f" but get the value: {clip_ratio_c}."
-
+    
+    # 这里求解的是 得到的是 log(pi_{theta} / pi_{theta_old})
+    # 但是注意在PPO Policy算法中，求解Loss用的是 pi_{theta} / pi_{theta_old} 作为重要性采样比
     negative_approx_kl = log_prob - old_log_prob
-    # Clamp negative_approx_kl for stability
-    negative_approx_kl = torch.clamp(negative_approx_kl, min=-20.0, max=20.0)
-    ratio = torch.exp(negative_approx_kl)
-    ppo_kl = verl_F.masked_mean(-negative_approx_kl, response_mask)
 
+    # Clamp negative_approx_kl for stability
+    negative_approx_kl = torch.clamp(negative_approx_kl, min=-20.0, max=20.0) # 为了防止KL过大或者过小，导致exp操作溢出
+    
+    # 因此这里进行了exp操作，去掉了log操作，得到了 pi_{theta} / pi_{theta_old} 作为重要性采样比
+    ratio = torch.exp(negative_approx_kl)
+
+    ppo_kl = verl_F.masked_mean(-negative_approx_kl, response_mask) # 这个数值只是为了打印出来，方便调试
+
+    # 这里求解的是 -advantages * pi_{theta} / pi_{theta_old}
+    # 注意这里并没有进行clip操作，后续才需要进行clip操作
     pg_losses1 = -advantages * ratio
     if cliprange_low is None:
         cliprange_low = cliprange
     if cliprange_high is None:
         cliprange_high = cliprange
+    
+    # 这里求解的是 -advantages * clip(pi_{theta} / pi_{theta_old}, 1-cliprange, 1+cliprange)
     pg_losses2 = -advantages * torch.clamp(ratio, 1 - cliprange_low, 1 + cliprange_high)  # - clip(ratio, 1-cliprange, 1+cliprange) * A
+    # 这里求解的是 max(-ratio * A, -clip(ratio, 1-cliprange, 1+cliprange) * A)
     clip_pg_losses1 = torch.maximum(pg_losses1, pg_losses2)  # max(-ratio * A, -clip(ratio, 1-cliprange, 1+cliprange) * A)
     pg_clipfrac = verl_F.masked_mean(torch.gt(pg_losses2, pg_losses1).float(), response_mask)
 
+    # 这段是 dual-clip PPO 的 actor loss；不是再做普通 PPO clip；
+    # 而是在 advantage < 0 时额外给 loss 加一个上界，避免“坏动作概率被降得过猛”产生异常大的梯度。
     pg_losses3 = -advantages * clip_ratio_c
+    
     clip_pg_losses2 = torch.min(pg_losses3, clip_pg_losses1)
     pg_clipfrac_lower = verl_F.masked_mean(torch.gt(clip_pg_losses1, pg_losses3) * (advantages < 0).float(), response_mask)
-
+    
+    # dual clip的目的是为了防止 advantage < 0 时，advantage * ratio 过大
     pg_losses = torch.where(advantages < 0, clip_pg_losses2, clip_pg_losses1)
     pg_loss = agg_loss(loss_mat=pg_losses, loss_mask=response_mask, loss_agg_mode=loss_agg_mode)
 
