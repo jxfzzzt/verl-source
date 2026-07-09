@@ -39,8 +39,13 @@ def run_ppo(config) -> None:
         # Set environment variables in the runtime environment to control tokenizer parallelism,
         # NCCL debug level, VLLM logging level, and allow runtime LoRA updating
         # `num_cpus` specifies the number of CPU cores Ray can use, obtained from the configuration
+        runtime_env_vars = {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}
+        for debug_env in ("RAY_DEBUG", "RAY_DEBUG_POST_MORTEM"):
+            if debug_env in os.environ:
+                runtime_env_vars[debug_env] = os.environ[debug_env]
+
         ray.init(
-            runtime_env={"env_vars": {"TOKENIZERS_PARALLELISM": "true", "NCCL_DEBUG": "WARN", "VLLM_LOGGING_LEVEL": "WARN", "VLLM_ALLOW_RUNTIME_LORA_UPDATING": "true"}},
+            runtime_env={"env_vars": runtime_env_vars},
             num_cpus=config.ray_init.num_cpus,
         )
 
