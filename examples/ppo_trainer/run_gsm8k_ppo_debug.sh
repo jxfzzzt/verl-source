@@ -7,7 +7,7 @@ set -x
 #   MODEL_PATH=Qwen/Qwen3-0.6B TOTAL_TRAINING_STEPS=1 bash examples/ppo_trainer/run_gsm8k_ppo_debug.sh
 
 export HF_HOME=/root/autodl-tmp/model_weights
-
+export RAY_DEBUG=1
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DATA_DIR="${DATA_DIR:-$HOME/data/gsm8k}"
 DEBUG_DATA_DIR="${DEBUG_DATA_DIR:-$HOME/data/gsm8k_debug}"
