@@ -186,13 +186,19 @@ def compute_gae_advantage_return(
         advantages_reversed = []
         gen_len = token_level_rewards.shape[-1]
 
+        # 这里计算GAE的过程就是 \sum_{b=0}^{T}(\lambda \gamma )^b \delta_{b} 
+        # 其中 \delta_{b} = r_{b+1} + \gamma V(s_{b+1}) - V(s_b)
+        # 其实就是 TD-Error, 动作价值 减去 状态价值
         for t in reversed(range(gen_len)):
             nextvalues = values[:, t + 1] if t < gen_len - 1 else 0.0
             delta = token_level_rewards[:, t] + gamma * nextvalues - values[:, t]
             lastgaelam = delta + gamma * lam * lastgaelam
             advantages_reversed.append(lastgaelam)
+        
+        
         advantages = torch.stack(advantages_reversed[::-1], dim=1)
 
+        # returns 用来对 critic model 进行训练
         returns = advantages + values
         advantages = verl_F.masked_whiten(advantages, response_mask)
     return advantages, returns

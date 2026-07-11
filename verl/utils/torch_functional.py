@@ -79,11 +79,13 @@ def logprobs_from_logits(logits, labels, inplace_backward=True):
         Tensor: Log-probabilities of the target labels, shape logits.shape[:-1].
     """
     if FLAH_ATTN_CROSS_ENTROPY_LOSS_AVAILABLE:
+        # 进行 reshape 操作主要是为了方便矩阵计算
         batch_dim = logits.shape[:-1]
         last_dim = logits.shape[-1]
         logits = logits.reshape(-1, last_dim)
         labels = labels.reshape(-1)
         output = logprobs_from_logits_flash_attn(logits, labels, inplace_backward=inplace_backward)
+        # 再求解完之后，又会通过view变回原来的 batch_dim 形状
         output = output.view(*batch_dim)
     elif NPU_CROSS_ENTROPY_LOSS_AVAILABLE:
         output = logprobs_from_logits_torch_npu(logits, labels)
