@@ -24,7 +24,11 @@ from verl import DataProto
 
 __all__ = ["BasePPOActor"]
 
-
+"""
+这里定义了一个抽象类 BasePPOActor, 他主要有两个操作
+一个是计算 每一个样本的 log_prob
+另一个是更新策略梯度
+"""
 class BasePPOActor(ABC):
     def __init__(self, config):
         """The base class for PPO actor
