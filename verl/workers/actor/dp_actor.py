@@ -85,6 +85,9 @@ class DataParallelPPOActor(BasePPOActor):
             entropy: # (bs, response_len)
             log_probs: # (bs, response_len)
         """
+
+        # 对一个 micro-batch 做一次 actor 模型前向
+        # 计算 response 部分每个 token 的 log probability，并计算 entropy
         response_length = micro_batch["responses"].size(-1)
         multi_modal_inputs = {}
         if "multi_modal_inputs" in micro_batch.keys():
@@ -101,6 +104,8 @@ class DataParallelPPOActor(BasePPOActor):
             input_ids = micro_batch["input_ids"]
             batch_size, seqlen = input_ids.shape
             attention_mask = micro_batch["attention_mask"]
+            
+            # position_ids 就是每个 token 的位置编号，shape是 (bsz, seqlen)
             position_ids = micro_batch["position_ids"]
             entropy = None
             if position_ids.dim() == 3:  # qwen2vl mrope
@@ -244,7 +249,9 @@ class DataParallelPPOActor(BasePPOActor):
                 if self.use_fused_kernels:
                     extra_args["temperature"] = temperature
                     extra_args["return_dict"] = True
-
+    
+                # 对整个 input_ids 做一次 actor 模型前向计算，得到output
+                # output.log_probs 的 shape 是  (batch_size * (max_prompt_length + max_response_length), vocab_size)
                 output = self.actor_module(
                     input_ids=input_ids,
                     attention_mask=attention_mask,
@@ -262,7 +269,14 @@ class DataParallelPPOActor(BasePPOActor):
                     logits = output.logits
 
                     logits.div_(temperature)
+
+                    # 这里是用负数倒着去找索引，找到 response 部分的 logits
+                    # 逻辑：第 t 个位置的 logits 预测第 t + 1 个 token
                     logits = logits[:, -response_length - 1 : -1, :]  # (bsz, response_length, vocab_size)
+
+                    # 已知 prompt 以及当前 response token 前面的所有 token
+                    # 模型预测当前位置真实 label token 的概率，然后取 log。
+                    # 这里的 micro_batch["responses"] 就是 label token ids
                     log_probs = logprobs_from_logits(logits, micro_batch["responses"])
                     if calculate_entropy:
                         entropy = verl_F.entropy_from_logits(logits)  # (bsz, response_length)
@@ -313,6 +327,7 @@ class DataParallelPPOActor(BasePPOActor):
         temperature = data.meta_info["temperature"]  # temperature must be in the data.meta_info to avoid silent error
         use_dynamic_bsz = data.meta_info["use_dynamic_bsz"]
 
+        # 这段代码是把每个 mini batch 继续拆分为 micro batch
         def _get_micro_batches(data: DataProto) -> Tuple[list, list | None]:
             select_keys = ["responses", "input_ids", "attention_mask", "position_ids"]
             batch = data.select(batch_keys=select_keys).batch
@@ -349,15 +364,21 @@ class DataParallelPPOActor(BasePPOActor):
 
         log_probs_lst = []
         entropy_lst = []
+        
+        # 逐个 micro batch 计算 log_prob 和 entropy
         for micro_batch in micro_batches:
             if isinstance(micro_batch, DataProto):
                 micro_batch = {**micro_batch.batch, **micro_batch.non_tensor_batch}
+            
             with torch.no_grad():
+                # 注意，这里计算是没有梯度的
+                # 计算每一个micro batch的 log_probs 和 entropy
                 entropy, log_probs = self._forward_micro_batch(micro_batch, temperature=temperature, calculate_entropy=calculate_entropy)
             log_probs_lst.append(log_probs)
             if calculate_entropy:
                 entropy_lst.append(entropy)
 
+        # 将所有 micro batch 的 log_prob 和 entropy 拼接起来，得到最终的 log_prob 和 entropy
         log_probs = torch.concat(log_probs_lst, dim=0)
         entropys = None
         if calculate_entropy:
@@ -370,6 +391,7 @@ class DataParallelPPOActor(BasePPOActor):
             if calculate_entropy:
                 entropys = entropys[revert_indices]
 
+        # Shape 都是 (batch_size, response_length)
         return log_probs, entropys
 
     @GPUMemoryLogger(role="dp actor", logger=logger)
