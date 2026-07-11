@@ -488,6 +488,7 @@ class DataParallelPPOActor(BasePPOActor):
                     calculate_entropy = False
                     if entropy_coeff != 0:
                         calculate_entropy = True
+                    # 这里计算得到的 entropy 是有梯度的 
                     entropy, log_prob = self._forward_micro_batch(micro_batch=data, temperature=temperature, calculate_entropy=calculate_entropy)
 
                     loss_mode = self.config.policy_loss.get("loss_mode", "vanilla")

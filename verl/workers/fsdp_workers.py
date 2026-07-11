@@ -516,6 +516,8 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 fsdp_config = OmegaConf.create()
 
             local_path = copy_to_local(self.config.model.path, use_shm=use_shm)
+            
+            # 构建 actor 模型对象和优化器对象
             (
                 self.actor_module_fsdp,
                 self.actor_optimizer,
