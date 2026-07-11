@@ -509,6 +509,8 @@ class DataParallelPPOActor(BasePPOActor):
                         loss = policy_loss * (len(data) / self.config.ppo_mini_batch_size)
                     else:
                         loss = policy_loss / self.gradient_accumulation
+                    
+                    # 对每一个 micro batch 都计算反向传播梯度并累积梯度
                     loss.backward()
 
                     data = {
@@ -519,8 +521,11 @@ class DataParallelPPOActor(BasePPOActor):
                     }
                     append_to_dict(metrics, data)
 
+                # 进行一次 mini batch 的梯度更新
                 grad_norm = self._optimizer_step()
                 data = {"actor/grad_norm": grad_norm.detach().item()}
                 append_to_dict(metrics, data)
+        
+        # 将梯度清零
         self.actor_optimizer.zero_grad()
         return metrics
