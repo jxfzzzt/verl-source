@@ -7,14 +7,14 @@ DATA_HOME='/root/autodl-tmp/verl'
 
 mkdir -p $DATA_HOME/data
 
-SFT_DATASET_PATH="$DATA_HOME/data/retool_sft_dataset.parquet"
-if [ ! -f "$SFT_DATASET_PATH" ]; then
-  wget -O "$SFT_DATASET_PATH" \
-    "https://huggingface.co/datasets/vermouth1992/ReTool-SFT/resolve/main/data/train-00000-of-00001.parquet"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SFT_DATASET_DIR="$DATA_HOME/data/retool_multi_turn_sft_preprocessed"
+if [ ! -f "$SFT_DATASET_DIR/train.parquet" ] || [ ! -f "$SFT_DATASET_DIR/test.parquet" ]; then
+  python "$SCRIPT_DIR/retool_multi_turn_sft_preprocess.py" --local_dir "$SFT_DATASET_DIR"
 fi
 
-TRAIN_DATA=$SFT_DATASET_PATH
-EVAL_DATA=$SFT_DATASET_PATH
+TRAIN_DATA=$SFT_DATASET_DIR/train.parquet
+EVAL_DATA=$SFT_DATASET_DIR/test.parquet
 MODEL_PATH=Qwen/Qwen3-4B
 SAVE_PATH=$DATA_HOME/checkpoints
 
@@ -29,6 +29,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --standalone --nnodes=1 --nproc_per_node=4
     data.multiturn.tools_key=tools \
     data.micro_batch_size_per_gpu=2 \
     model.partial_pretrain=$MODEL_PATH \
+    model.trust_remote_code=true \
     trainer.default_local_dir=$SAVE_PATH \
     trainer.project_name=multiturn-sft \
     trainer.experiment_name=multiturn-sft-qwen-3-8b-instruct-sp2 \
