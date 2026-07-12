@@ -7,7 +7,8 @@ DATA_HOME='/root/autodl-tmp/verl'
 
 mkdir -p $DATA_HOME/data
 
-wget -O $DATA_HOME/data/retool_sft_dataset.parquet https://huggingface.co/datasets/vermouth1992/ReTool-SFT/blob/main/data/train-00000-of-00001.parquet
+wget -O "$DATA_HOME/data/retool_sft_dataset.parquet" \
+  "https://huggingface.co/datasets/vermouth1992/ReTool-SFT/resolve/main/data/train-00000-of-00001.parquet"
 
 TRAIN_DATA=$DATA_HOME/data/retool_sft_dataset.parquet
 EVAL_DATA=$DATA_HOME/data/retool_sft_dataset.parquet
