@@ -7,11 +7,14 @@ DATA_HOME='/root/autodl-tmp/verl'
 
 mkdir -p $DATA_HOME/data
 
-wget -O "$DATA_HOME/data/retool_sft_dataset.parquet" \
-  "https://huggingface.co/datasets/vermouth1992/ReTool-SFT/resolve/main/data/train-00000-of-00001.parquet"
+SFT_DATASET_PATH="$DATA_HOME/data/retool_sft_dataset.parquet"
+if [ ! -f "$SFT_DATASET_PATH" ]; then
+  wget -O "$SFT_DATASET_PATH" \
+    "https://huggingface.co/datasets/vermouth1992/ReTool-SFT/resolve/main/data/train-00000-of-00001.parquet"
+fi
 
-TRAIN_DATA=$DATA_HOME/data/retool_sft_dataset.parquet
-EVAL_DATA=$DATA_HOME/data/retool_sft_dataset.parquet
+TRAIN_DATA=$SFT_DATASET_PATH
+EVAL_DATA=$SFT_DATASET_PATH
 MODEL_PATH=Qwen/Qwen3-4B
 SAVE_PATH=$DATA_HOME/checkpoints
 
@@ -19,8 +22,8 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --standalone --nnodes=1 --nproc_per_node=4
      -m verl.trainer.fsdp_sft_trainer \
     data.train_files=$TRAIN_DATA \
     data.val_files=$EVAL_DATA \
-    data.max_length=16384 \
-    data.train_batch_size=16 \
+    data.max_length=4096 \
+    data.train_batch_size=8 \
     data.multiturn.enable=true \
     data.multiturn.messages_key=messages \
     data.multiturn.tools_key=tools \
