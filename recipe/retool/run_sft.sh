@@ -12,7 +12,7 @@ wget -O "$DATA_HOME/data/retool_sft_dataset.parquet" \
 
 TRAIN_DATA=$DATA_HOME/data/retool_sft_dataset.parquet
 EVAL_DATA=$DATA_HOME/data/retool_sft_dataset.parquet
-MODEL_PATH=Qwen/Qwen3-8B
+MODEL_PATH=Qwen/Qwen3-4B
 SAVE_PATH=$DATA_HOME/checkpoints
 
 CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --standalone --nnodes=1 --nproc_per_node=4 \
