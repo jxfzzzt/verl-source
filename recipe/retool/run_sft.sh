@@ -5,7 +5,7 @@ set -x
 export HF_HOME='/root/autodl-tmp/model_weights'
 DATA_HOME='/root/autodl-tmp/verl'
 
-mkdir $DATA_HOME/data
+mkdir -p $DATA_HOME/data
 
 wget -O $DATA_HOME/data/retool_sft_dataset.parquet https://huggingface.co/datasets/vermouth1992/ReTool-SFT/blob/main/data/train-00000-of-00001.parquet
 
