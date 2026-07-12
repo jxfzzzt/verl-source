@@ -28,7 +28,7 @@ torchrun --standalone --nnodes=1 --nproc_per_node=2 \
     trainer.default_local_dir=$SAVE_PATH \
     trainer.project_name=multiturn-sft \
     trainer.experiment_name=multiturn-sft-qwen-3-8b-instruct-sp2 \
-    trainer.logger=['console','wandb', 'tensorboard'] \
+    trainer.logger=['console','wandb'] \
     trainer.total_epochs=2 \
     trainer.default_hdfs_dir=null \
     ulysses_sequence_parallel_size=2 \
