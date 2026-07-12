@@ -15,7 +15,7 @@ EVAL_DATA=$DATA_HOME/data/retool_sft_dataset.parquet
 MODEL_PATH=Qwen/Qwen3-8B
 SAVE_PATH=$DATA_HOME/checkpoints
 
-torchrun --standalone --nnodes=1 --nproc_per_node=2 \
+CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --standalone --nnodes=1 --nproc_per_node=4 \
      -m verl.trainer.fsdp_sft_trainer \
     data.train_files=$TRAIN_DATA \
     data.val_files=$EVAL_DATA \
@@ -32,5 +32,5 @@ torchrun --standalone --nnodes=1 --nproc_per_node=2 \
     trainer.logger=['console','wandb'] \
     trainer.total_epochs=2 \
     trainer.default_hdfs_dir=null \
-    ulysses_sequence_parallel_size=2 \
+    ulysses_sequence_parallel_size=4 \
     use_remove_padding=true
